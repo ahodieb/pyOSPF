@@ -5,11 +5,14 @@ def dijkestra(G, O):
     S = [O]  # shoretes path nodes
     V = G.keys()  # Vertices
     V.remove(O)
+    
     d = {O: 0}  # distance
     E = {}  # un optimized routing table . need to adjuest gatways
 
     dp = {}  # d prime
     Ep = {}
+
+    n_s = O  # newly added s
     for v in V:
         dp[v] = G[O][v]
         Ep[v] = (v, O)
@@ -21,20 +24,20 @@ def dijkestra(G, O):
         # causes quadratic time atleast
         # i already cash the results in the above variables but i cant get
         # my mind around that idea for now .
-            for s in S:
-                print "current s : ", s
-                print "current v", v
-                print "g[s][v] :", G[s][v]
-                print "dp[v", dp[v]
+            # for s in S:
+            #     if d[s] + G[s][v] < dp[v]:
+            #         dp[v] = d[s] + G[s][v]
+            #         Ep[v] = (v, s)
 
-                if d[s] + G[s][v] < dp[v]:
-                    dp[v] = d[s] + G[s][v]
-                    Ep[v] = (v, s)
+            if d[n_s] + G[n_s][v] < dp[v]:
+                dp[v] = d[n_s] + G[n_s][v]
+                Ep[v] = (v, n_s)
 
         m = min(dp)
 
         V.remove(m)
         S.append(m)
+        n_s = m
 
         d[m] = (dp[m])
         dp.pop(m)
