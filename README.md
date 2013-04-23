@@ -10,7 +10,7 @@ I'm going to start with Step 4 , because its the most important one.
 
 #Step 1 : Establishing Router Adjecency
 #Step 2 : Election of DR , BDR
-#Step 3 : Discovering Routs.
+#Step 3 : Discovering Routes.
 
 
 
