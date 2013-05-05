@@ -1,93 +1,100 @@
-<!DOCTYPE html>
+<!doctype html>
+<!-- The Time Machine GitHub pages theme was designed and developed by Jon Rohan, on Feb 7, 2012. -->
+<!-- Follow him for fun. http://twitter.com/jonrohan. Tail his code on http://github.com/jonrohan -->
 <html>
-  <head>
-    <meta charset='utf-8'>
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="viewport" content="width=640" />
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 
-    <link rel="stylesheet" href="stylesheets/core.css" media="screen"/>
-    <link rel="stylesheet" href="stylesheets/mobile.css" media="handheld, only screen and (max-device-width:640px)"/>
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css"/>
+  <link rel="stylesheet" href="stylesheets/stylesheet.css" media="screen"/>
+  <link rel="stylesheet" href="stylesheets/pygment_trac.css"/>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+  <script type="text/javascript" src="javascripts/script.js"></script>
 
-    <script type="text/javascript" src="javascripts/modernizr.js"></script>
-    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script type="text/javascript" src="javascripts/headsmart.min.js"></script>
-    <script type="text/javascript">
-      $(document).ready(function () {
-        $('#main_content').headsmart()
-      })
-    </script>
-    <title>Pyospf by TheNightPhoenix</title>
-  </head>
+  <title>Pyospf</title>
+  <meta name="description" content="">
 
-  <body>
-    <a id="forkme_banner" href="https://github.com/TheNightPhoenix/pyOSPF">View on GitHub</a>
-    <div class="shell">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
 
-      <header>
-        <span class="ribbon-outer">
-          <span class="ribbon-inner">
-            <h1>Pyospf</h1>
-            <h2></h2>
-          </span>
-          <span class="left-tail"></span>
-          <span class="right-tail"></span>
-        </span>
-      </header>
+</head>
 
-      <section id="downloads">
-        <span class="inner">
-          <a href="https://github.com/TheNightPhoenix/pyOSPF/zipball/master" class="zip"><em>download</em> .ZIP</a><a href="https://github.com/TheNightPhoenix/pyOSPF/tarball/master" class="tgz"><em>download</em> .TGZ</a>
-        </span>
-      </section>
+<body>
 
+  <div class="wrapper">
+    <header>
+      <h1 class="title">Pyospf</h1>
+    </header>
+    <div id="container">
+      <p class="tagline"></p>
+      <div id="main" role="main">
+        <div class="download-bar">
+        <div class="inner">
+          <a href="https://github.com/TheNightPhoenix/pyOSPF/tarball/master" class="download-button tar"><span>Download</span></a>
+          <a href="https://github.com/TheNightPhoenix/pyOSPF/zipball/master" class="download-button zip"><span>Download</span></a>
+          <a href="https://github.com/TheNightPhoenix/pyOSPF" class="code">View Pyospf on GitHub</a>
+        </div>
+        <span class="blc"></span><span class="trc"></span>
+        </div>
+        <article class="markdown-body">
+          <h1>pyOSPF</h1>
 
-      <span class="banner-fix"></span>
+<p>A python implementation of the OSPF Routing Protocol.
+It's probably very inaccurate but i try to implement it as accurate as i can.
+Its supposed to be used as an educational explanation of how OSPF works and not to be used as an emulator or anything like the CISCO emulators.</p>
 
+<p>I have divided the OSPF operations to 5 different operations and theses steps might not get fully implemented as this is a college project and i might run out of time.</p>
 
-      <section id="main_content">
-        <h3>Welcome to GitHub Pages.</h3>
+<p>I'm going to start with Step 4 , because its the most important one.</p>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+<h1>Step 0 : Defining Router Class</h1>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
-</code></pre>
+<h2>Properties :</h2>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<ul>
+<li>Router class methods map router actions [ex : send hello message]</li>
+<li>Routers run in separate threads to emulate their parallelism in action.</li>
+<li>Routers write outputs in separate files to be monitored separately. [ a good enough solution for threads to write outputs with console interface. i use tail -f command to monitor the outputs.]</li>
+</ul><h1>Step 1 : Establishing Router Adjacency</h1>
 
-<h3>Designer Templates</h3>
+<h1>Step 2 : Election of DR , BDR</h1>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+<h1>Step 3 : Discovering Routes.</h1>
 
-<h3>Rather Drive Stick?</h3>
+<h1>Step 4 : Calculating Routing Table</h1>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<h2>Inputs :</h2>
 
-<h3>Authors and Contributors</h3>
+<p>Adjacency Information from all adjacent routers in the form of a Graph G.</p>
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+<h2>Outputs :</h2>
 
-<h3>Support or Contact</h3>
+<p>Generate the routing table for this node to all other nodes.</p>
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
-      </section>
+<h2>Process :</h2>
 
-      <footer>
-        <span class="ribbon-outer">
-          <span class="ribbon-inner">
-            <p>this project by <a href="https://github.com/TheNightPhoenix">TheNightPhoenix</a> can be found on <a href="https://github.com/TheNightPhoenix/pyOSPF">GitHub</a></p>
-          </span>
-          <span class="left-tail"></span>
-          <span class="right-tail"></span>
-        </span>
-        <p>Generated with <a href="http://pages.github.com">GitHub Pages</a> using Merlot</p>
-        <span class="octocat"></span>
-      </footer>
+<p>applying the implementation of dijktra's algorithm on the graph to generate the shortest path from the node to all other nodes in the AS.</p>
 
+<h1>Step 5 : Maintaining LSDB / Routing Table</h1>
+        </article>
+      </div>
     </div>
+    <footer>
+      <div class="owner">
+      <p><a href="https://github.com/TheNightPhoenix" class="avatar"><img src="https://secure.gravatar.com/avatar/16d9059031f40a1d4c4ea30153b030e3?s=30&amp;d=https://a248.e.akamai.net/assets.github.com%2Fimages%2Fgravatars%2Fgravatar-user-420.png" width="48" height="48"/></a> <a href="https://github.com/TheNightPhoenix">TheNightPhoenix</a> maintains <a href="https://github.com/TheNightPhoenix/pyOSPF">Pyospf</a></p>
 
-    
-  </body>
+
+      </div>
+      <div class="creds">
+        <small>This page generated using <a href="https://pages.github.com/">GitHub Pages</a><br/>theme by <a href="http://twitter.com/jonrohan/">Jon Rohan</a></small>
+      </div>
+    </footer>
+  </div>
+  <div class="current-section">
+    <a href="#top">Scroll to top</a>
+    <a href="https://github.com/TheNightPhoenix/pyOSPF/tarball/master" class="tar">tar</a><a href="https://github.com/TheNightPhoenix/pyOSPF/zipball/master" class="zip">zip</a><a href="" class="code">source code</a>
+    <p class="name"></p>
+  </div>
+
+  
+</body>
 </html>
