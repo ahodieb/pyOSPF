@@ -15,15 +15,62 @@ class router_thread(Thread):
     def __init__(self, router, name, lock):
         Thread.__init__(self)
         self.on = True
-        self.buffer = []
-        self.lock = lock
-        self.file_name = 'routers/' + name + '.txt'
+        file_name = 'routers/' + name + '.txt'
+        self.buffer = buffer_writer_thread(file_name, lock)
+        self.buffer.start()
         self.router = router
+
+    def write(self, s):
+        self.buffer.write(s)
+
+    def run(self):
+        logging.debug('Router Started')
+        while(self.on):
+            time.sleep(2)
+
+            for c in self.router.connections.values():
+                logging.debug('sending to : ' + c['router'].name)
+                c['router'].send_hello(
+
+                    {
+                        'network_mask': '255.255.255.0',
+                        'router_priority': '1',
+
+                        'hello_interval': '10',
+                        'dead_interval': '30',
+
+                        'DR': '',
+                        'BDR': '',
+                        'Neighbour': self.router.connections.keys(),
+                        'options': {}
+                    }
+
+                )
+
+            # self.buffer.append(self.getName() + time.strftime('
+            # {%H:%M:%S}'))
+
+
+class buffer_writer_thread(Thread):
+
+    def __init__(self, file_name, lock):
+        Thread.__init__(self)
+        self.buffer = []
+        self.buffer_write_interval = 5
+        self.file_name = file_name
+        self.lock = lock
+        self.on = True
+
+    def write(self, s):
+        # logging.debug('writing to output buffer.')
+        with self.lock:
+            self.buffer.append(s)
+            # logging.debug(s)
 
     def dump(self):
         # locking the thread to write affects the performance !
-        logging.debug('Dumping buffer to files.')
-        logging.debug(self.buffer)
+        # logging.debug('Dumping buffer to files.')
+        # logging.debug(self.buffer)
 
         with self.lock:
             if self.buffer:
@@ -31,23 +78,10 @@ class router_thread(Thread):
                     while self.buffer:
                         f.write(self.buffer.pop(0) + '\n')
 
-    def write(self, s):
-        logging.debug('writing to output buffer.')
-        with self.lock:
-            self.buffer.append(s + '      ' + time.strftime('{%H:%M:%S}'))
-            logging.debug(s)
-
     def run(self):
         while(self.on):
-            time.sleep(1)
-            logging.debug('Router Started')
-            self.write('hi')
-            time.sleep(1)
-            self.write('hello')
             time.sleep(2)
             self.dump()
-            # self.buffer.append(self.getName() + time.strftime('
-            # {%H:%M:%S}'))
 
 
 class router(object):
@@ -66,8 +100,42 @@ class router(object):
     def connect(self, connection):
         self.connections[connection['ip']] = connection
 
-    def setup_connection(router, ip, connection_type, NIC, note=''):
-        return {'router': router, 'ip': ip, 'connection_type': connection_type, 'NIC': NIC, 'note': note}
+    def send_hello(self, p):
+        """
+        {
+        'network_mask':'',
+        'router_priority':'',
+
+        'hello_interval':'',
+        'dead_interval':'',
+
+        'DR':'',
+        'BDR':'',
+        'Neighbour':[]
+        'options':{}
+        }
+        """
+        self.router_thread.write(
+            'Hello Recived ' + time.strftime('{%H:%M:%S}') + str(p) + '\n')
+
+    def setup_connection(router, ip, subnet_mask, connection_type, NIC, note=''):
+        """
+        Parameters
+        ----------
+        router : router object
+                 The router object to be connected.
+        ip : str
+             The ip of this router in this connection.
+        subnet_mask : str
+                      The ip of this router in this connection.
+        connection_type : str
+                          the type of connection ex: p2p ,switch, frame realy , other .
+        NIC : str
+              the NIC mac address of the connection.
+
+        """
+
+        return {'router': router, 'ip': ip, 'subnet_mask': subnet_mask, 'connection_type': connection_type, 'NIC': NIC, 'note': note}
 
 
 def main():
@@ -81,14 +149,11 @@ def main():
 
     logging.debug("Created Routers")
 
-    logging.debug(router.setup_connection(
-        r2, '192.168.0.4', 'eth', '90:E6:BA:88:18:3A'))
+    r1.connect(router.setup_connection(
+        r2, '192.168.0.4', '255.255.255.0', 'p2p', '90:E6:BA:88:18:3A'))
 
     r1.connect(router.setup_connection(
-        r2, '192.168.0.4', 'eth', '90:E6:BA:88:18:3A'))
-
-    r1.connect(router.setup_connection(
-        r3, '192.168.0.4', 'eth', '00:02:21:04:43:21'))
+        r3, '192.168.0.4', '255.255.255.0', 'p2p', '00:02:21:04:43:21'))
 
     logging.debug("Coneected Routers")
 
