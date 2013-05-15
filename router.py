@@ -33,6 +33,16 @@ class router_thread(Thread):
                 c['router'].send_hello(
 
                     {
+                        #'version':'',
+                        #'type':'hello',
+                        #'packet_lenght':'',
+
+                        'router_id': '',
+                        'area_id': '',
+
+                        'Au_type': '0',  # no auth
+                        #'checksum':'',
+
                         'network_mask': '255.255.255.0',
                         'router_priority': '1',
 
@@ -86,10 +96,9 @@ class buffer_writer_thread(Thread):
 
 class router(object):
 
-    def __init__(self, area, name, lock, priority=1, connections=[], ):
+    def __init__(self, area, name, lock, priority=1, connections={}, ):
         self.priority = priority
-        self.connections = connections
-        self.area = area
+
         self.DR = self
         self.name = name
         self.connections = {}
@@ -97,12 +106,22 @@ class router(object):
         self.router_thread = router_thread(router=self, name=name, lock=lock)
         self.router_thread.name = self.name
 
-    def connect(self, connection):
+    def connect_physical(self, connection):
         self.connections[connection['ip']] = connection
 
     def send_hello(self, p):
         """
         {
+        ##header##
+        'version':'',
+        'type':'hello',
+        'packet_lenght':'',
+        'router_id':'',
+        'area_id':'',
+        'Au_type':'',
+        'checksum':'',
+
+        ##Hello Packet
         'network_mask':'',
         'router_priority':'',
 
@@ -149,10 +168,10 @@ def main():
 
     logging.debug("Created Routers")
 
-    r1.connect(router.setup_connection(
+    r1.connect_physical(router.setup_connection(
         r2, '192.168.0.4', '255.255.255.0', 'p2p', '90:E6:BA:88:18:3A'))
 
-    r1.connect(router.setup_connection(
+    r1.connect_physical(router.setup_connection(
         r3, '192.168.0.5', '255.255.255.0', 'p2p', '00:02:21:04:43:21'))
 
     logging.debug("Coneected Routers")
