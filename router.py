@@ -16,6 +16,8 @@ class router_thread(Thread):
         Thread.__init__(self)
         self.on = True
         self.router = router
+        self.hello_interval = 5
+        self.lock = lock
 
     def write(self, s):
         self.router.buffer.write(s)
@@ -24,40 +26,41 @@ class router_thread(Thread):
         logging.debug('Router Thread Started Started')
 
         while(self.on):
-            time.sleep(2)
+            time.sleep(self.hello_interval)
 
-            for N, r in self.router.physical_connections.items():
+            for N, c in self.router.physical_connections.items():
 
-                logging.debug('sending to : ' + r.name)
+                logging.debug('sending to : ' + c['r'].name)
 
                 local_config = self.router.NIC_config[N]
-                r.send_hello(
+                with self.lock:
+                    c['r'].send_hello(
 
-                    {
-                        #'version':'',
-                        #'type':'hello',
-                        #'packet_lenght':'',
+                        {
+                            #'version':'',
+                            #'type':'hello',
+                            #'packet_lenght':'',
 
-                        'router_id': local_config['ip'],
-                        'area_id': local_config['area'],
+                            'router_id': local_config['ip'],
+                            'area_id': local_config['area'],
 
-                        'Au_type': '0',  # no auth
-                        #'checksum':'',
+                            'Au_type': '0',  # no auth
+                            #'checksum':'',
 
-                        'network_mask': local_config['sn_mask'],
-                        'router_priority': self.router.priority,
+                            'network_mask': local_config['sn_mask'],
+                            'router_priority': self.router.priority,
 
-                        'hello_interval': '10',
-                        'dead_interval': '30',
+                            'hello_interval': self.hello_interval,
+                            'dead_interval': '30',
 
-                        'DR': '',
-                        'BDR': '',
-                        'Neighbour': self.router.neigbours.values(),
-                        'options': {}
-                    },
-                    self.router
+                            'DR': '',
+                            'BDR': '',
+                            'Neighbour': self.router.neigbours.values(),
+                            'options': {}
+                        },
+                        self.router
 
-                )
+                    )
 
             # self.buffer.append(self.getName() + time.strftime('
             # {%H:%M:%S}'))
@@ -113,6 +116,7 @@ class router(object):
 
         # discoverd data.
         self.neigbours = {}
+        self.known_neighbors = []
         self.DR = self
 
         # threads running.
@@ -123,17 +127,22 @@ class router(object):
         file_name = 'routers/' + name + '.txt'
         self.buffer = buffer_writer_thread(file_name, lock)
 
-    def connect_physical(self, r, lni, rni, pair=True):
+    def connect_physical(self, r, cost, lni, rni, pair=True):
         # simulate physical connection.
         # connects a router to a phyiscal NIC.
         # lni : local NIC index
         # rni : remote NIC index
-        self.physical_connections[self.NIC_config.keys()[lni]] = r
+        self.physical_connections[self.NIC_config.keys()[
+                                  lni]] = {'r': r, 'cost': cost}
+
         logging.debug('Physical Connection {0} == > {1}'.format(
             self.name, r.name))
 
         if pair:
-            r.connect_physical(self, rni, lni, False)
+            r.connect_physical(self, cost, rni, lni, False)
+
+    def __repr__(self):
+        return self.name
 
     def send_hello(self, packet, sender):
         """
@@ -168,13 +177,16 @@ class router(object):
         # like hello intevral and dead intveraval
         # that need to mach but im not doing them for now at least .
 
-        for N, r in self.physical_connections.items():
-            if r.name == sender.name:
-                if self.NIC_config[N]['sn_mask'] == packet['network_mask']:
-                    self.neigbours[packet['router_id']] = N
-                    self.router_thread.write(
-                        'Neighbour Added' + time.strftime('{%H:%M:%S} ') + packet['router_id'] + ' ' + sender.name + '\n')
-                break
+        for N, c in self.physical_connections.items():
+
+            if c['r'] not in self.known_neighbors:
+                if c['r'].name == sender.name:
+                    if True:  # self.NIC_config[N]['sn_mask'] == packet['network_mask']:
+                        self.neigbours[packet['router_id']] = c
+                        self.known_neighbors.append(c['r'])
+                        self.router_thread.write(
+                            'Neighbour Added' + time.strftime('{%H:%M:%S} ') + packet['router_id'] + ' ' + sender.name + '\n')
+                    break
 
 
 def main():
@@ -184,41 +196,48 @@ def main():
 
     r1 = router(name='r1', lock=lock)
     r1.NIC_config = {
-        '00:00:00:00:01:01': {'ip': '192.168.0.4', 'sn_mask': '/24', 'area': '0'},
-        '00:00:00:00:01:02': {'ip': '192.168.0.5', 'sn_mask': '/24', 'area': '0'},
-        '00:00:00:00:01:03': {'ip': '192.168.0.6', 'sn_mask': '/24', 'area': '0'},
-        '00:00:00:00:01:04': {'ip': '192.168.0.7', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:01:01': {'ip': '192.168.0.1', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:01:02': {'ip': '192.168.0.1', 'sn_mask': '/24', 'area': '0'},
     }
 
     r2 = router(name='r2', lock=lock)
     r2.NIC_config = {
-        '00:00:00:00:02:01': {'ip': '192.168.0.4', 'sn_mask': '/24', 'area': '0'},
-        '00:00:00:00:02:02': {'ip': '192.168.0.6', 'sn_mask': '/24', 'area': '0'},
-        '00:00:00:00:02:03': {'ip': '192.168.0.6', 'sn_mask': '/24', 'area': '0'},
-        '00:00:00:00:02:04': {'ip': '192.168.0.7', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:02:01': {'ip': '192.168.0.2', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:02:02': {'ip': '192.168.0.2', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:02:03': {'ip': '192.168.0.2', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:02:04': {'ip': '192.168.0.2', 'sn_mask': '/25', 'area': '0'},
+
     }
 
     r3 = router(name='r3', lock=lock)
     r3.NIC_config = {
-        '00:00:00:00:03:01': {'ip': '192.168.0.4', 'sn_mask': '/24', 'area': '0'},
-        '00:00:00:00:03:02': {'ip': '192.168.0.6', 'sn_mask': '/24', 'area': '0'},
-        '00:00:00:00:03:03': {'ip': '192.168.0.6', 'sn_mask': '/24', 'area': '0'},
-        '00:00:00:00:03:04': {'ip': '192.168.0.7', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:03:01': {'ip': '192.168.0.3', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:03:02': {'ip': '192.168.0.3', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:03:03': {'ip': '192.168.0.3', 'sn_mask': '/25', 'area': '0'},
     }
 
     r4 = router(name='r4', lock=lock)
     r4.NIC_config = {
-        '00:00:00:00:04:01': {'ip': '192.168.0.4', 'sn_mask': '/24', 'area': '0'},
-        '00:00:00:00:04:02': {'ip': '192.168.0.6', 'sn_mask': '/24', 'area': '0'},
-        '00:00:00:00:04:03': {'ip': '192.168.0.6', 'sn_mask': '/24', 'area': '0'},
-        '00:00:00:00:04:04': {'ip': '192.168.0.7', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:04:01': {'ip': '192.178.1.5', 'sn_mask': '/25', 'area': '0'},
+        '00:00:00:00:04:02': {'ip': '192.178.1.5', 'sn_mask': '/25', 'area': '0'},
+    }
+
+    r5 = router(name='r5', lock=lock)
+    r5.NIC_config = {
+        '00:00:00:00:04:01': {'ip': '192.122.1.4', 'sn_mask': '/25', 'area': '0'},
     }
 
     logging.debug("Created Routers")
+    # link cost = 100 000 000 / 1 000 000
+              #  100M / 1 MB = 100
+    r1.connect_physical(r2, 100, 0, 0)
+    r1.connect_physical(r3, 100, 1, 0)
 
-    r1.connect_physical(r2, 0, 0)
-    r1.connect_physical(r3, 1, 0)
-    r1.connect_physical(r4, 2, 0)
+    r2.connect_physical(r3, 50, 1, 1)
+    r2.connect_physical(r4, 10, 3, 1)
+    r2.connect_physical(r5, 10, 2, 0)
+
+    r3.connect_physical(r4, 25, 2, 0)
 
     logging.debug("Coneected Routers")
 
@@ -226,11 +245,13 @@ def main():
     r2.buffer.start()
     r3.buffer.start()
     r4.buffer.start()
+    r5.buffer.start()
 
     r1.router_thread.start()
     r2.router_thread.start()
-    # r3.router_thread.start()
-    # r4.router_thread.start()
+    r3.router_thread.start()
+    r4.router_thread.start()
+    r5.router_thread.start()
 
 
 if __name__ == '__main__':
@@ -238,3 +259,38 @@ if __name__ == '__main__':
     raw_input()
     raw_input()
     os._exit(1)
+
+
+
+    # r1 = router(name='r1', lock=lock)
+    # r1.NIC_config = {
+    #     '00:00:00:00:01:01': {'ip': '192.168.0.1', 'sn_mask': '/24', 'area': '0'},
+    #     '00:00:00:00:01:02': {'ip': '192.168.0.1', 'sn_mask': '/24', 'area': '0'},
+    # }
+
+    # r2 = router(name='r2', lock=lock)
+    # r2.NIC_config = {
+    #     '00:00:00:00:02:01': {'ip': '192.168.0.2', 'sn_mask': '/24', 'area': '0'},
+    #     '00:00:00:00:02:02': {'ip': '192.168.0.2', 'sn_mask': '/24', 'area': '0'},
+    #     '00:00:00:00:02:03': {'ip': '192.122.1.5', 'sn_mask': '/24', 'area': '0'},
+    #     '00:00:00:00:02:04': {'ip': '192.178.1.3', 'sn_mask': '/25', 'area': '0'},
+
+    # }
+
+    # r3 = router(name='r3', lock=lock)
+    # r3.NIC_config = {
+    #     '00:00:00:00:03:01': {'ip': '192.168.0.3', 'sn_mask': '/24', 'area': '0'},
+    #     '00:00:00:00:03:02': {'ip': '192.168.0.3', 'sn_mask': '/24', 'area': '0'},
+    #     '00:00:00:00:03:03': {'ip': '192.178.1.4', 'sn_mask': '/25', 'area': '0'},
+    # }
+
+    # r4 = router(name='r4', lock=lock)
+    # r4.NIC_config = {
+    #     '00:00:00:00:04:01': {'ip': '192.178.1.5', 'sn_mask': '/25', 'area': '0'},
+    #     '00:00:00:00:04:02': {'ip': '192.178.1.5', 'sn_mask': '/25', 'area': '0'},
+    # }
+
+    # r5 = router(name='r5', lock=lock)
+    # r5.NIC_config = {
+    #     '00:00:00:00:04:01': {'ip': '192.122.1.4', 'sn_mask': '/25', 'area': '0'},
+    # }
