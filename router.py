@@ -4,6 +4,7 @@ import threading
 import time
 import os
 import logging
+import dijkstra as dj
 
 
 logging.basicConfig(level=logging.DEBUG,
@@ -16,7 +17,7 @@ class router_thread(Thread):
         Thread.__init__(self)
         self.on = True
         self.router = router
-        self.hello_interval = 5
+        self.hello_interval = 2
         self.lock = lock
 
     def write(self, s):
@@ -26,46 +27,59 @@ class router_thread(Thread):
         logging.debug('Router Thread Started Started')
 
         while(self.on):
-            time.sleep(self.hello_interval)
+            for i in range(5):
+                time.sleep(self.hello_interval)
 
-            for N, c in self.router.physical_connections.items():
+                for N, c in self.router.physical_connections.items():
 
-                logging.debug('sending to : ' + c['r'].name)
+                    logging.debug('sending to : ' + c['r'].name)
 
-                local_config = self.router.NIC_config[N]
-                with self.lock:
-                    c['r'].send_hello(
+                    local_config = self.router.NIC_config[N]
+                    with self.lock:
+                        c['r'].send_hello(
 
-                        {
-                            #'version':'',
-                            #'type':'hello',
-                            #'packet_lenght':'',
+                            {
+                                #'version':'',
+                                #'type':'hello',
+                                #'packet_lenght':'',
 
-                            'router_id': local_config['ip'],
-                            'area_id': local_config['area'],
+                                'router_id': local_config['ip'],
+                                'area_id': local_config['area'],
 
-                            'Au_type': '0',  # no auth
-                            #'checksum':'',
+                                'Au_type': '0',  # no auth
+                                #'checksum':'',
 
-                            'network_mask': local_config['sn_mask'],
-                            'router_priority': self.router.priority,
+                                'network_mask': local_config['sn_mask'],
+                                'router_priority': self.router.priority,
 
-                            'hello_interval': self.hello_interval,
-                            'dead_interval': '30',
+                                'hello_interval': self.hello_interval,
+                                'dead_interval': '30',
 
-                            'DR': '',
-                            'BDR': '',
-                            'Neighbour': self.router.neigbours.values(),
-                            'options': {}
-                        },
-                        self.router
+                                'DR': '',
+                                'BDR': '',
+                                'Neighbour': self.router.neigbours.values(),
+                                'options': {}
+                            },
+                            self.router
 
-                    )
+                        )
+            with self.lock:
+                G = self.router.creat_graph()
+                d, E = dj.dijkestra(G, self.name)
+                T = self.router.generate_routing_table(d, E)
+
+                self.router.buffer.write('\nGenerated Graph :\n'+(
+                    '*'*20) + '\n\n' + str(G) + '\n')
+                self.router.buffer.write('\n\n' + (
+                    '*'*20) + '\n\n' + str(d) + '\n\n' + str(E)+'\n')
+
+                self.router.buffer.write('\n\nRouting Table' + (
+                    '-'*20) + '\n\n' + str(T) + (
+                        '-'*20) + '\n\n')
+
 
             # self.buffer.append(self.getName() + time.strftime('
             # {%H:%M:%S}'))
-
-
 class buffer_writer_thread(Thread):
 
     def __init__(self, file_name, lock):
@@ -222,7 +236,27 @@ class router(object):
                     G[lkn[i].name][n['r'].name] = n['cost']
 
         return G
-        
+
+    def generate_routing_table(self, D, E):
+
+        routing_table = []
+
+        for n in E.keys():
+            d = {}
+            d['destination'] = n
+            d['cost'] = D[n]
+            d['gateway'] = E[n][1]
+
+            routing_table.append(d)
+
+        return routing_table
+
+
+        # {'r4': 110, 'r5': 110,  'r2': 100, 'r3': 100}
+
+        # {'r4': ('r4', 'r2'), 'r5': ('r5', 'r2'), 'r2': ('r2', 'r1'), 'r3': ('r3', 'r1')}
+
+
         # self.router_thread.write(
         #     '\nKnown Network Nodes' + str(G))
 

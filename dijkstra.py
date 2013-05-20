@@ -6,7 +6,7 @@ def dijkestra(G, O):
     V = G.keys()  # Vertices
     V.remove(O)
 
-    d = {O: 0}  # distance
+    d = {O: 0}  # distance from orign to node
     E = {}  # un optimized routing table . need to adjuest gatways
 
     dp = {}  # d prime
@@ -18,16 +18,7 @@ def dijkestra(G, O):
         Ep[v] = (v, O)
 
     while (V):
-        print V
-        print d
-        print dp
-        
-
-
         for v in V:
-            print '-'*20
-            print v
-        # this loop is ineffecient try to optimise later (23/4/2013)
         # causes quadratic time atleast
         # i already cash the results in the above variables but i cant get
         # my mind around that idea for now .
@@ -35,18 +26,12 @@ def dijkestra(G, O):
             #     if d[s] + G[s][v] < dp[v]:
             #         dp[v] = d[s] + G[s][v]
             #         Ep[v] = (v, s)
-            print d[n_s]
-            print G[n_s][v]
-            print dp[v]
 
             if d[n_s] + G[n_s][v] < dp[v]:
                 dp[v] = d[n_s] + G[n_s][v]
                 Ep[v] = (v, n_s)
-            print '-'*20
 
-        m = min(dp,key=dp.get)
-        print dp
-        print m
+        m = min(dp, key=dp.get)
 
         V.remove(m)
         S.append(m)
@@ -58,8 +43,7 @@ def dijkestra(G, O):
         E[m] = (Ep[m])
         Ep.pop(m)
 
-        print "*"*20
-
+    d.pop(O)
     return (d, E)
 
 
