@@ -183,22 +183,52 @@ class router(object):
             if c['r'] not in self.known_neighbors:
                 if c['r'].name == sender.name:
                     if True:  # self.NIC_config[N]['sn_mask'] == packet['network_mask']:
-                        self.neigbours[packet['router_id']] = c
-                       
+                        self.neigbours[sender.name] = c
+
                         self.known_neighbors.append(c['r'])
 
                         self.router_thread.write(
                             'Neighbour Added' + time.strftime('{%H:%M:%S} ') + packet['router_id'] + ' ' + sender.name + '\n')
 
-                        
                     break
             else:
                 self.network_table[packet[
                     'router_id']] = packet['Neighbour']
 
-                self.router_thread.write(
-                    '\n\n\nCurrent Network Table' + str(self.network_table))
+                # self.router_thread.write(
+                #     '\n\n\nCurrent Network Table' + str(self.network_table))
+                self.creat_graph()
 
+    def creat_graph(self):
+        lkn = [self]  # list of known nodes
+        G = {}
+
+        for n in self.neigbours.values():
+            if n['r'] not in lkn:
+                lkn.append(n['r'])
+                for m in n['r'].neigbours.values():
+                    if m['r'] not in lkn:
+                        lkn.append(m['r'])
+
+        for i in xrange(len(lkn)):
+            G[lkn[i].name] = {}
+
+            for j in xrange(len(lkn)):
+                G[lkn[i].name][lkn[j].name] = float('inf')
+                if i == j:
+                    G[lkn[i].name][lkn[j].name] = 0
+
+                for n in lkn[i].physical_connections.values():
+                    G[lkn[i].name][n['r'].name] = n['cost']
+
+        return G
+        
+        # self.router_thread.write(
+        #     '\nKnown Network Nodes' + str(G))
+
+        # {'192.168.0.2': [{'r': r3, 'cost': 50}, {'r': r1, 'cost': 100}, {'r': r5, 'cost': 10}, {'r': r4, 'cost': 10}],
+
+        #  '192.168.0.3': [{'r': r2, 'cost': 50}, {'r': r1, 'cost': 100}, {'r': r4, 'cost': 25}]}
 
 
 def main():
