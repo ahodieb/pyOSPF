@@ -12,16 +12,13 @@ logging.basicConfig(level=logging.DEBUG,
 
 class router_thread(Thread):
 
-    def __init__(self, router, name, lock):
+    def __init__(self, router, lock):
         Thread.__init__(self)
         self.on = True
-        file_name = 'routers/' + name + '.txt'
-        self.buffer = buffer_writer_thread(file_name, lock)
-        self.buffer.start()
         self.router = router
 
     def write(self, s):
-        self.buffer.write(s)
+        self.router.buffer.write(s)
 
     def run(self):
         logging.debug('Router Started')
@@ -96,18 +93,42 @@ class buffer_writer_thread(Thread):
 
 class router(object):
 
-    def __init__(self, area, name, lock, priority=1, connections={}, ):
-        self.priority = priority
+    def __init__(self, name, lock, priority=1):
 
-        self.DR = self
+        # configrations
         self.name = name
-        self.connections = {}
+        self.priority = priority
+        self.NIC_config = {}
+        # ip assigned to each NIC ,
+        # subnet mask.
+        # area
 
-        self.router_thread = router_thread(router=self, name=name, lock=lock)
+        # connections
+        self.physical_connections = {}
+
+        # discoverd data.
+        self.neigbours = {}
+        self.DR = self
+
+        # threads running.
+        self.router_thread = router_thread(router=self, lock=lock)
         self.router_thread.name = self.name
 
-    def connect_physical(self, connection):
-        self.connections[connection['ip']] = connection
+        # buffer writer to dispaly router debuging output.
+        file_name = 'routers/' + name + '.txt'
+        self.buffer = buffer_writer_thread(file_name, lock)
+
+    def connect_physical(self, r, lni, rni, pair=True):
+        # simulate physical connection.
+        # connects a router to a phyiscal NIC.
+        # lni : local NIC index
+        # rni : remote NIC index
+        self.physical_connections[self.NIC_config.keys()[lni]] = r
+        logging.debug('Physical Connection {0} == > {1}'.format(
+            self.name, r.name))
+
+        if pair:
+            r.connect_physical(self, rni, lni, False)
 
     def send_hello(self, p):
         """
@@ -137,48 +158,56 @@ class router(object):
         self.router_thread.write(
             'Hello Recived ' + time.strftime('{%H:%M:%S}') + str(p) + '\n')
 
-    def setup_connection(router, ip, subnet_mask, connection_type, NIC, note=''):
-        """
-        Parameters
-        ----------
-        router : router object
-                 The router object to be connected.
-        ip : str
-             The ip of this router in this connection.
-        subnet_mask : str
-                      The ip of this router in this connection.
-        connection_type : str
-                          the type of connection ex: p2p ,switch, frame realy , other .
-        NIC : str
-              the NIC mac address of the connection.
-
-        """
-
-        return {'router': router, 'ip': ip, 'subnet_mask': subnet_mask, 'connection_type': connection_type, 'NIC': NIC, 'note': note}
-
 
 def main():
     print 'PID ', os.getpid()
 
     lock = threading.RLock()
 
-    r1 = router(area=0, name='r1', lock=lock)
-    r2 = router(area=0, name='r2', lock=lock)
-    r3 = router(area=0, name='r3', lock=lock)
+    r1 = router(name='r1', lock=lock)
+    r1.NIC_config = {
+        '00:00:00:00:01:01': {'ip': '192.168.0.4', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:01:02': {'ip': '192.168.0.5', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:01:03': {'ip': '192.168.0.6', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:01:04': {'ip': '192.168.0.7', 'sn_mask': '/24', 'area': '0'},
+    }
+
+    r2 = router(name='r2', lock=lock)
+    r2.NIC_config = {
+        '00:00:00:00:02:01': {'ip': '192.168.0.4', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:02:02': {'ip': '192.168.0.6', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:02:03': {'ip': '192.168.0.6', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:02:04': {'ip': '192.168.0.7', 'sn_mask': '/24', 'area': '0'},
+    }
+
+    r3 = router(name='r3', lock=lock)
+    r3.NIC_config = {
+        '00:00:00:00:03:01': {'ip': '192.168.0.4', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:03:02': {'ip': '192.168.0.6', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:03:03': {'ip': '192.168.0.6', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:03:04': {'ip': '192.168.0.7', 'sn_mask': '/24', 'area': '0'},
+    }
+
+    r4 = router(name='r4', lock=lock)
+    r4.NIC_config = {
+        '00:00:00:00:04:01': {'ip': '192.168.0.4', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:04:02': {'ip': '192.168.0.6', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:04:03': {'ip': '192.168.0.6', 'sn_mask': '/24', 'area': '0'},
+        '00:00:00:00:04:04': {'ip': '192.168.0.7', 'sn_mask': '/24', 'area': '0'},
+    }
 
     logging.debug("Created Routers")
 
-    r1.connect_physical(router.setup_connection(
-        r2, '192.168.0.4', '255.255.255.0', 'p2p', '90:E6:BA:88:18:3A'))
-
-    r1.connect_physical(router.setup_connection(
-        r3, '192.168.0.5', '255.255.255.0', 'p2p', '00:02:21:04:43:21'))
+    r1.connect_physical(r2, 0, 0)
+    r1.connect_physical(r3, 1, 0)
+    r1.connect_physical(r4, 2, 0)
 
     logging.debug("Coneected Routers")
 
-    r1.router_thread.start()
-    r2.router_thread.start()
-    r3.router_thread.start()
+    # r1.router_thread.start()
+    # r2.router_thread.start()
+    # r3.router_thread.start()
+
 
 if __name__ == '__main__':
     main()
