@@ -78,8 +78,8 @@ class buffer_writer_thread(Thread):
 
     def write(self, s):
         # logging.debug('writing to output buffer.')
-        with self.lock:
-            self.buffer.append(s)
+        # with self.lock:
+        self.buffer.append(s)
             # logging.debug(s)
 
     def dump(self):
@@ -117,6 +117,7 @@ class router(object):
         # discoverd data.
         self.neigbours = {}
         self.known_neighbors = []
+        self.network_table = {}
         self.DR = self
 
         # threads running.
@@ -183,10 +184,21 @@ class router(object):
                 if c['r'].name == sender.name:
                     if True:  # self.NIC_config[N]['sn_mask'] == packet['network_mask']:
                         self.neigbours[packet['router_id']] = c
+                       
                         self.known_neighbors.append(c['r'])
+
                         self.router_thread.write(
                             'Neighbour Added' + time.strftime('{%H:%M:%S} ') + packet['router_id'] + ' ' + sender.name + '\n')
+
+                        
                     break
+            else:
+                self.network_table[packet[
+                    'router_id']] = packet['Neighbour']
+
+                self.router_thread.write(
+                    '\n\n\nCurrent Network Table' + str(self.network_table))
+
 
 
 def main():
