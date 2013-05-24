@@ -15,12 +15,17 @@ I'm going to start with Step 4 , because its the most important one.
 * Routers write outputs in separate files to be monitored separately. [ a good enough solution for threads to write outputs with console interface. i use tail -f command to monitor the outputs.]
 
 #Step 1 : Establishing Router Adjacency
+* Router thread keeps sending hello messages to physical connections [ this is simulated by running the send_hello method in connected routers ].
+* Router receiving hello message adds the sender in his neighbours list .
+* Router adds his neighbours neighbours to his adjacency list.
+* after certain time each router creates a graph from the adjacency list and passes it to the Dijkstra's algorithm module.
+
 #Step 2 : Election of DR , BDR
-#Step 3 : Discovering Routes.
 
 
 
-#Step 4 : Calculating Routing Table
+
+#Step 3 : Calculating Routing Table
 
 ##Inputs : 
 Adjacency Information from all adjacent routers in the form of a Graph G.
@@ -29,10 +34,12 @@ Adjacency Information from all adjacent routers in the form of a Graph G.
 Generate the routing table for this node to all other nodes.
 
 ##Process : 
-applying the implementation of dijktra's algorithm on the graph to generate the shortest path from the node to all other nodes in the AS.
+applying the implementation of Dijkstra's algorithm on the graph to generate the shortest path from the node to all other nodes in the AS.
 
 
-#Step 5 : Maintaining LSDB / Routing Table
+#Step 4 : Maintaining LSDB / Routing Table
+
+
 
 
 
