@@ -22,7 +22,7 @@ I am going to simulate 2 parts
 * Router adds his neighbours neighbours to his adjacency list.
 * after certain time each router creates a graph from the adjacency list and passes it to the Dijkstra's algorithm module.
 
-#Step 2 : Election of DR , BDR [ not implemented ]
+#Step 2 : Election of DR , BDR [not implemented]
 It needs a little bit of code do be done because it was initialy supported the Router priority is sent so its just the process of seleceting the highst priority .
 
 
